@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enchanted To-Do List</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+            position: relative;
+            overflow: hidden;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            text-shadow: 0 0 10px #4CAF50;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        input, button, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        input:focus, button:focus, select:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+        }
+        button {
+            background-color: #4CAF50;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        li:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .task-text {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .task-actions button {
+            padding: 5px 10px;
+            font-size: 0.8em;
+            margin: 0;
+        }
+        .completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        #searchInput, #filterSelect {
+            margin-bottom: 15px;
+        }
+        .glitter {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+        @keyframes glitterAnimation {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes snowfall {
+            0% { transform: translateY(-10vh) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+        .snowflake {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: snowfall linear infinite;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOutDown {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(20px); }
+        }
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #4CAF50, 0 0 10px #4CAF50; }
+            to { text-shadow: 0 0 10px #4CAF50, 0 0 20px #4CAF50; }
+        }
+        .fadeInUp { animation: fadeInUp 0.5s ease; }
+        .fadeOutDown { animation: fadeOutDown 0.5s ease; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enchanted To-Do List</h1>
+        <input type="text" id="taskInput" placeholder="Enter a new task">
+        <input type="text" id="searchInput" placeholder="Search tasks">
+        <select id="filterSelect">
+            <option value="all">All Tasks</option>
+            <option value="completed">Completed</option>
+            <option value="incomplete">Incomplete</option>
+        </select>
+        <button id="addTask">Add Task</button>
+        <ul id="taskList"></ul>
+    </div>
+
+    <script>
+        const taskInput = document.getElementById('taskInput');
+        const searchInput = document.getElementById('searchInput');
+        const filterSelect = document.getElementById('filterSelect');
+        const addTaskButton = document.getElementById('addTask');
+        const taskList = document.getElementById('taskList');
+        const container = document.querySelector('.container');
+
+        addTaskButton.addEventListener('click', addTask);
+        taskInput.addEventListener('keypress', e => { if (e.key === 'Enter') addTask(); });
+        searchInput.addEventListener('input', filterTasks);
+        filterSelect.addEventListener('change', filterTasks);
+
+        function addTask() {
+            if (taskInput.value.trim() === '') return;
+
+            const li = document.createElement('li');
+            const now = new Date();
+            li.innerHTML = `
+                <span class="task-text">${taskInput.value}</span>
+                <span class="task-time">${now.toLocaleTimeString()}</span>
+                <div class="task-actions">
+                    <button class="complete">✓</button>
+                    <button class="delete">✕</button>
+                </div>
+            `;
+            li.classList.add('fadeInUp');
+            taskList.appendChild(li);
+
+            li.querySelector('.complete').addEventListener('click', toggleComplete);
+            li.querySelector('.delete').addEventListener('click', deleteTask);
+
+            taskInput.value = '';
+            createGlitterEffect(li);
+        }
+
+        function toggleComplete(e) {
+            const taskText = e.target.closest('li').querySelector('.task-text');
+            taskText.classList.toggle('completed');
+            filterTasks();
+        }
+
+        function deleteTask(e) {
+            const li = e.target.closest('li');
+            li.classList.add('fadeOutDown');
+            li.addEventListener('animationend', () => li.remove());
+        }
+
+        function filterTasks() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filterValue = filterSelect.value;
+            Array.from(taskList.children).forEach(task => {
+                const taskText = task.querySelector('.task-text').textContent.toLowerCase();
+                const isCompleted = task.querySelector('.task-text').classList.contains('completed');
+                const matchesSearch = taskText.includes(searchTerm);
+                const matchesFilter = 
+                    filterValue === 'all' || 
+                    (filterValue === 'completed' && isCompleted) || 
+                    (filterValue === 'incomplete' && !isCompleted);
+                task.style.display = matchesSearch && matchesFilter ? '' : 'none';
+            });
+        }
+
+        function createGlitterEffect(element) {
+            for (let i = 0; i < 5; i++) {
+                const glitter = document.createElement('div');
+                glitter.classList.add('glitter');
+                glitter.style.left = `${Math.random() * 100}%`;
+                glitter.style.top = `${Math.random() * 100}%`;
+                glitter.style.animationDuration = `${Math.random() * 1 + 0.5}s`;
+                glitter.style.animationDelay = `${Math.random() * 0.5}s`;
+                element.appendChild(glitter);
+                glitter.addEventListener('animationend', () => glitter.remove());
+            }
+        }
+
+        function createSnowflake() {
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+            snowflake.style.left = `${Math.random() * 100}%`;
+            snowflake.style.animationDuration = `${Math.random() * 5 + 5}s`;
+            document.body.appendChild(snowflake);
+            snowflake.addEventListener('animationiteration', () => snowflake.remove());
+        }
+
+        setInterval(createSnowflake, 200);
+
+        document.querySelectorAll('button, input, select').forEach(elem => {
+            elem.addEventListener('mouseover', () => createGlitterEffect(elem));
+        });
+    </script>
+</body>
+</html>
